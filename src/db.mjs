@@ -106,8 +106,8 @@ export function upsertAsset(asset) {
 const stmtById = db.prepare(`
   SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str
   FROM assets a
-  LEFT JOIN asset_tags at ON at.asset_id = a.id
-  LEFT JOIN tags t ON t.id = at.tag_id
+  LEFT JOIN asset_tags atags ON atags.asset_id = a.id
+  LEFT JOIN tags t ON t.id = atags.tag_id
   WHERE a.id = ?
   GROUP BY a.id
 `);
@@ -136,7 +136,14 @@ export function getAssets(query = {}) {
 
   if (search) {
     conditions.push(`a.id IN (SELECT rowid FROM assets_fts WHERE assets_fts MATCH @search)`);
-    params.search = `"${search.replace(/"/g, '""')}"*`;
+    // Build a prefix-search query: each whitespace-separated token gets a * suffix
+    // This allows "sun" to match "sunset", "sunrise", etc.
+    params.search = search
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(t => `${t.replace(/['"*]/g, '')}*`)
+      .join(' ');
   }
   if (type && type !== 'all') {
     conditions.push('a.type = @type');
@@ -176,8 +183,8 @@ export function getAssets(query = {}) {
   const rowSql = `
     SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str
     FROM assets a
-    LEFT JOIN asset_tags at ON at.asset_id = a.id
-    LEFT JOIN tags t ON t.id = at.tag_id
+    LEFT JOIN asset_tags atags ON atags.asset_id = a.id
+    LEFT JOIN tags t ON t.id = atags.tag_id
     ${where}
     GROUP BY a.id
     ORDER BY a.${col} ${dir}
@@ -202,9 +209,12 @@ export function updateAsset(id, update) {
 
 // ── tags ─────────────────────────────────────────────────────────────────────
 export function addTag(assetId, tagName) {
-  db.prepare(`INSERT OR IGNORE INTO tags (name) VALUES (?)`).run(tagName);
-  const tag = db.prepare(`SELECT id FROM tags WHERE name = ? COLLATE NOCASE`).get(tagName);
-  db.prepare(`INSERT OR IGNORE INTO asset_tags (asset_id, tag_id) VALUES (?, ?)`).run(assetId, tag.id);
+  const insertTag = db.transaction(() => {
+    db.prepare(`INSERT OR IGNORE INTO tags (name) VALUES (?)`).run(tagName);
+    const tag = db.prepare(`SELECT id FROM tags WHERE name = ? COLLATE NOCASE`).get(tagName);
+    db.prepare(`INSERT OR IGNORE INTO asset_tags (asset_id, tag_id) VALUES (?, ?)`).run(assetId, tag.id);
+  });
+  insertTag();
 }
 
 export function removeTag(assetId, tagName) {
