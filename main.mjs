@@ -5,6 +5,8 @@ import { app, BrowserWindow } from 'electron';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === 'development';
+// Note: ELECTRON_DISABLE_SANDBOX=1 is set in the dev:electron npm script for
+// WSL2 compatibility. It is intentionally dev-only and not used in production.
 
 function createWindow() {
   const win = new BrowserWindow({
