@@ -93,7 +93,7 @@ const stmtUpsert = db.prepare(`
     duration_sec = excluded.duration_sec, date_taken = excluded.date_taken,
     date_modified = excluded.date_modified, make = excluded.make,
     model = excluded.model, gps_lat = excluded.gps_lat, gps_lng = excluded.gps_lng,
-    thumbnail_path = excluded.thumbnail_path,
+    thumbnail_path = excluded.thumbnail_path, type = excluded.type,
     indexed_at = datetime('now')
   RETURNING id
 `);
@@ -114,12 +114,8 @@ const stmtById = db.prepare(`
 
 function parseRow(row) {
   if (!row) return null;
-  return {
-    ...row,
-    favorite: row.favorite === 1,
-    tags: row.tag_str ? row.tag_str.split('||') : [],
-    tag_str: undefined,
-  };
+  const { tag_str, ...rest } = row;
+  return { ...rest, favorite: rest.favorite === 1, tags: tag_str ? tag_str.split('||') : [] };
 }
 
 export function getAssetById(id) {
@@ -146,9 +142,8 @@ export function getAssets(query = {}) {
     conditions.push('a.type = @type');
     params.type = type;
   }
-  if (favorite === true) {
-    conditions.push('a.favorite = 1');
-  }
+  if (favorite === true)  { conditions.push('a.favorite = 1'); }
+  if (favorite === false) { conditions.push('a.favorite = 0'); }
   if (ratingMin != null) {
     conditions.push('a.rating >= @ratingMin');
     params.ratingMin = ratingMin;
