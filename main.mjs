@@ -1,12 +1,19 @@
 // dam/main.mjs
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, protocol, net } from 'electron';
+import { registerIpcHandlers } from './src/ipc.mjs';
+import { getSetting } from './src/db.mjs';
+import { startWatcher } from './src/watcher.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === 'development';
-// Note: ELECTRON_DISABLE_SANDBOX=1 is set in the dev:electron npm script for
-// WSL2 compatibility. It is intentionally dev-only and not used in production.
+const thumbDir = path.join(app.getPath('userData'), 'thumbnails');
+
+// Must be called before app is ready
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'thumb', privileges: { secure: true, supportFetchAPI: true } },
+]);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -18,6 +25,18 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+
+  protocol.handle('thumb', (request) => {
+    const filePath = decodeURIComponent(request.url.slice('thumb://'.length));
+    return net.fetch(`file://${filePath}`);
+  });
+
+  registerIpcHandlers(win);
+  win.setTitle('DAM — Digital Asset Manager');
+
+  const savedPaths = getSetting('crawlPaths') ?? [];
+  if (savedPaths.length > 0) startWatcher(savedPaths, thumbDir);
+
   if (isDev) {
     win.loadURL('http://localhost:5173');
     win.webContents.openDevTools({ mode: 'detach' });
