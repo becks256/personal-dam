@@ -1,5 +1,17 @@
 // renderer/src/pages/Browse.tsx
 import React from 'react';
+import SearchBar from '../components/SearchBar';
+import AssetGrid from '../components/AssetGrid';
+import AssetModal from '../components/AssetModal';
+import { useUiStore } from '../store/uiStore';
+
 export default function Browse() {
-  return <div className="p-8 text-zinc-500">Browse — coming in Task 10</div>;
+  const modalOpen = useUiStore(s => s.modalOpen);
+  return (
+    <div className="flex flex-col h-full">
+      <SearchBar />
+      <AssetGrid />
+      {modalOpen && <AssetModal />}
+    </div>
+  );
 }
