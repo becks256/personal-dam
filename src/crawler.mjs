@@ -23,7 +23,7 @@ export async function walkForMedia(rootDir, onFile, isAborted) {
       if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
       await walkForMedia(entryPath, onFile, isAborted);
     } else if (entry.isFile() && isMediaFile(entryPath)) {
-      onFile(entryPath);
+      await onFile(entryPath);
     }
   }
 }
