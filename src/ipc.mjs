@@ -6,7 +6,7 @@ import {
   addTag, removeTag, getAllTags,
   getSetting, setSetting,
   getCategories, createCategory, deleteCategory, renameCategory,
-  assignCategory, removeFromCategory,
+  assignCategory, removeFromCategory, bulkAssignCategory,
 } from './db.mjs';
 import { startCrawl } from './crawler.mjs';
 import { startWatcher, stopWatcher } from './watcher.mjs';
@@ -30,6 +30,7 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('categories:rename', (_e, { id, name }) => { renameCategory(id, name); });
   ipcMain.handle('categories:assign', (_e, { assetId, categoryId }) => { assignCategory(assetId, categoryId); });
   ipcMain.handle('categories:remove', (_e, { assetId, categoryId }) => { removeFromCategory(assetId, categoryId); });
+  ipcMain.handle('categories:bulkAssign', (_e, { assetIds, categoryId }) => { bulkAssignCategory(assetIds, categoryId); });
 
   ipcMain.handle('crawler:start', (_e, paths) => {
     if (activeCrawl) activeCrawl.stop();

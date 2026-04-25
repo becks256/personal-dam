@@ -85,6 +85,7 @@ export interface DamApi {
   renameCategory(id: number, name: string): Promise<void>;
   assignCategory(assetId: number, categoryId: number): Promise<void>;
   removeFromCategory(assetId: number, categoryId: number): Promise<void>;
+  bulkAssignCategory(assetIds: number[], categoryId: number): Promise<void>;
 }
 
 declare global {

@@ -304,4 +304,9 @@ export function removeFromCategory(assetId, categoryId) {
     .run(assetId, categoryId);
 }
 
+export function bulkAssignCategory(assetIds, categoryId) {
+  const stmt = db.prepare(`INSERT OR IGNORE INTO asset_categories (asset_id, category_id) VALUES (?, ?)`);
+  db.transaction(() => { for (const id of assetIds) stmt.run(id, categoryId); })();
+}
+
 export default db;
