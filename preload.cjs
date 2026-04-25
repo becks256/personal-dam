@@ -13,6 +13,13 @@ contextBridge.exposeInMainWorld('dam', {
   getSettings: ()              => ipcRenderer.invoke('settings:get'),
   saveSettings:(settings)      => ipcRenderer.invoke('settings:save', settings),
   selectDirectory: ()          => ipcRenderer.invoke('dialog:selectDir'),
+  // Categories
+  getCategories:      ()                    => ipcRenderer.invoke('categories:getAll'),
+  createCategory:     (name, description)   => ipcRenderer.invoke('categories:create', { name, description }),
+  deleteCategory:     (id)                  => ipcRenderer.invoke('categories:delete', id),
+  renameCategory:     (id, name)            => ipcRenderer.invoke('categories:rename', { id, name }),
+  assignCategory:     (assetId, categoryId) => ipcRenderer.invoke('categories:assign', { assetId, categoryId }),
+  removeFromCategory: (assetId, categoryId) => ipcRenderer.invoke('categories:remove', { assetId, categoryId }),
   onCrawlerProgress: (cb) => {
     const handler = (_event, progress) => cb(progress);
     ipcRenderer.on('crawler:progress', handler);

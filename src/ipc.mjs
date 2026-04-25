@@ -5,6 +5,8 @@ import {
   getAssets, getAssetById, updateAsset,
   addTag, removeTag, getAllTags,
   getSetting, setSetting,
+  getCategories, createCategory, deleteCategory, renameCategory,
+  assignCategory, removeFromCategory,
 } from './db.mjs';
 import { startCrawl } from './crawler.mjs';
 import { startWatcher, stopWatcher } from './watcher.mjs';
@@ -20,6 +22,14 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('tags:add', (_e, { assetId, tag }) => { addTag(assetId, tag); });
   ipcMain.handle('tags:remove', (_e, { assetId, tag }) => { removeTag(assetId, tag); });
   ipcMain.handle('tags:getAll', () => getAllTags());
+
+  // ── Categories ────────────────────────────────────────────────────────────
+  ipcMain.handle('categories:getAll', () => getCategories());
+  ipcMain.handle('categories:create', (_e, { name, description }) => createCategory(name, description));
+  ipcMain.handle('categories:delete', (_e, id) => { deleteCategory(id); });
+  ipcMain.handle('categories:rename', (_e, { id, name }) => { renameCategory(id, name); });
+  ipcMain.handle('categories:assign', (_e, { assetId, categoryId }) => { assignCategory(assetId, categoryId); });
+  ipcMain.handle('categories:remove', (_e, { assetId, categoryId }) => { removeFromCategory(assetId, categoryId); });
 
   ipcMain.handle('crawler:start', (_e, paths) => {
     if (activeCrawl) activeCrawl.stop();

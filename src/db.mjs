@@ -58,6 +58,18 @@ db.exec(`
     PRIMARY KEY (asset_id, tag_id)
   );
 
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    description TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS asset_categories (
+    asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (asset_id, category_id)
+  );
+
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -104,7 +116,10 @@ export function upsertAsset(asset) {
 
 // ── getAssetById ─────────────────────────────────────────────────────────────
 const stmtById = db.prepare(`
-  SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str
+  SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str,
+    (SELECT GROUP_CONCAT(c.name, '||')
+     FROM asset_categories ac JOIN categories c ON c.id = ac.category_id
+     WHERE ac.asset_id = a.id) AS category_str
   FROM assets a
   LEFT JOIN asset_tags atags ON atags.asset_id = a.id
   LEFT JOIN tags t ON t.id = atags.tag_id
@@ -114,8 +129,13 @@ const stmtById = db.prepare(`
 
 function parseRow(row) {
   if (!row) return null;
-  const { tag_str, ...rest } = row;
-  return { ...rest, favorite: rest.favorite === 1, tags: tag_str ? tag_str.split('||') : [] };
+  const { tag_str, category_str, ...rest } = row;
+  return {
+    ...rest,
+    favorite: rest.favorite === 1,
+    tags: tag_str ? tag_str.split('||') : [],
+    categories: category_str ? category_str.split('||') : [],
+  };
 }
 
 export function getAssetById(id) {
@@ -126,7 +146,7 @@ export function getAssetById(id) {
 export function getAssets(query = {}) {
   const {
     search, type, tags = [], favorite, ratingMin,
-    dateFrom, dateTo,
+    dateFrom, dateTo, categoryId,
     sortBy = 'date_modified', sortDir = 'desc',
     limit = 100, offset = 0,
   } = query;
@@ -173,6 +193,10 @@ export function getAssets(query = {}) {
       params[`tag${i}`] = tags[i];
     }
   }
+  if (categoryId != null) {
+    conditions.push('a.id IN (SELECT asset_id FROM asset_categories WHERE category_id = @categoryId)');
+    params.categoryId = categoryId;
+  }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const allowedSort = ['date_taken','date_modified','filename','rating','size_bytes'];
@@ -181,7 +205,10 @@ export function getAssets(query = {}) {
 
   const countSql = `SELECT COUNT(*) as n FROM assets a ${where}`;
   const rowSql = `
-    SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str
+    SELECT a.*, GROUP_CONCAT(t.name, '||') AS tag_str,
+      (SELECT GROUP_CONCAT(c.name, '||')
+       FROM asset_categories ac JOIN categories c ON c.id = ac.category_id
+       WHERE ac.asset_id = a.id) AS category_str
     FROM assets a
     LEFT JOIN asset_tags atags ON atags.asset_id = a.id
     LEFT JOIN tags t ON t.id = atags.tag_id
@@ -240,6 +267,41 @@ export function setSetting(key, value) {
 
 export function setThumbnailPath(assetId, thumbPath) {
   db.prepare(`UPDATE assets SET thumbnail_path = ? WHERE id = ?`).run(thumbPath, assetId);
+}
+
+// ── categories ────────────────────────────────────────────────────────────────
+export function getCategories() {
+  return db.prepare(`
+    SELECT c.id, c.name, c.description,
+      COUNT(ac.asset_id) as assetCount
+    FROM categories c
+    LEFT JOIN asset_categories ac ON ac.category_id = c.id
+    GROUP BY c.id
+    ORDER BY c.name
+  `).all();
+}
+
+export function createCategory(name, description = '') {
+  return db.prepare(`INSERT INTO categories (name, description) VALUES (?, ?) RETURNING id, name, description`)
+    .get(name, description);
+}
+
+export function deleteCategory(id) {
+  db.prepare(`DELETE FROM categories WHERE id = ?`).run(id);
+}
+
+export function renameCategory(id, name) {
+  db.prepare(`UPDATE categories SET name = ? WHERE id = ?`).run(name, id);
+}
+
+export function assignCategory(assetId, categoryId) {
+  db.prepare(`INSERT OR IGNORE INTO asset_categories (asset_id, category_id) VALUES (?, ?)`)
+    .run(assetId, categoryId);
+}
+
+export function removeFromCategory(assetId, categoryId) {
+  db.prepare(`DELETE FROM asset_categories WHERE asset_id = ? AND category_id = ?`)
+    .run(assetId, categoryId);
 }
 
 export default db;

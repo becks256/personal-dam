@@ -20,6 +20,7 @@ export interface Asset {
   description: string;
   thumbnail_path: string | null; // absolute fs path; served via thumb:// protocol
   tags: string[];
+  categories: string[];     // category names this asset belongs to
 }
 
 export interface AssetQuery {
@@ -34,6 +35,7 @@ export interface AssetQuery {
   sortDir?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
+  categoryId?: number;      // filter by category
 }
 
 export interface AssetUpdate {
@@ -55,6 +57,13 @@ export interface Settings {
   crawlPaths: string[];         // directories to crawl
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+  assetCount: number;
+}
+
 // window.dam shape — preload exposes this via contextBridge
 export interface DamApi {
   getAssets(query: AssetQuery): Promise<{ assets: Asset[]; total: number }>;
@@ -70,6 +79,12 @@ export interface DamApi {
   selectDirectory(): Promise<string | null>;
   /** Register a crawler progress listener. Returns cleanup fn. */
   onCrawlerProgress(cb: (progress: CrawlerProgress) => void): () => void;
+  getCategories(): Promise<Category[]>;
+  createCategory(name: string, description?: string): Promise<Category>;
+  deleteCategory(id: number): Promise<void>;
+  renameCategory(id: number, name: string): Promise<void>;
+  assignCategory(assetId: number, categoryId: number): Promise<void>;
+  removeFromCategory(assetId: number, categoryId: number): Promise<void>;
 }
 
 declare global {
