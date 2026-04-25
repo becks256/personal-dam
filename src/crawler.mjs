@@ -53,7 +53,7 @@ export function startCrawl(rootPaths, thumbDir, onProgress) {
           const meta = await extractMetadata(filePath);
           const filename = path.basename(filePath);
 
-          const { id } = upsertAsset({ path: filePath, filename, type, ...meta });
+          const { id } = upsertAsset({ path: filePath, filename, type, thumbnail_path: null, ...meta });
 
           const thumbPath = await generateThumbnail(filePath, thumbDir);
           if (thumbPath) setThumbnailPath(id, thumbPath);
