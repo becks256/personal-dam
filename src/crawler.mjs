@@ -60,8 +60,8 @@ export function startCrawl(rootPaths, thumbDir, onProgress) {
 
           progress.indexed++;
           onProgress({ ...progress });
-        } catch {
-          // skip files that fail metadata extraction
+        } catch (err) {
+          console.error('[crawler] failed to index', filePath, err?.message ?? err);
         }
       }, isAborted);
     }
