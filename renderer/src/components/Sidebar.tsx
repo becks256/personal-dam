@@ -9,6 +9,8 @@ export default function Sidebar() {
   const { categories, activeCategory, fetchCategories, createCategory, deleteCategory, renameCategory, setActiveCategory } = useCategoryStore();
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
 
   useEffect(() => { fetchCategories(); }, []);
 
@@ -17,15 +19,15 @@ export default function Sidebar() {
     setQuery({ categoryId: id ?? undefined, offset: 0 });
   }
 
-  async function handleCreate() {
-    const name = window.prompt('Category name:');
-    if (!name?.trim()) return;
-    await createCategory(name.trim());
+  async function commitCreate() {
+    const name = newName.trim();
+    setCreating(false);
+    setNewName('');
+    if (name) await createCategory(name);
   }
 
   async function handleDelete(e: React.MouseEvent, id: number) {
     e.stopPropagation();
-    if (!window.confirm('Delete this category?')) return;
     await deleteCategory(id);
     if (activeCategory === id) selectCategory(null);
   }
@@ -68,7 +70,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between px-3 pt-3 pb-1">
           <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Categories</span>
           <button
-            onClick={handleCreate}
+            onClick={() => { setCreating(true); setNewName(''); }}
             className="text-zinc-500 hover:text-zinc-200 text-base leading-none"
             title="New category"
           >+</button>
@@ -85,6 +87,23 @@ export default function Sidebar() {
         >
           All assets
         </button>
+
+        {creating && (
+          <div className="px-3 py-1.5">
+            <input
+              autoFocus
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onBlur={commitCreate}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitCreate();
+                if (e.key === 'Escape') { setCreating(false); setNewName(''); }
+              }}
+              placeholder="Category name…"
+              className="w-full bg-zinc-800 text-sm text-zinc-200 placeholder-zinc-600 px-2 py-0.5 rounded focus:outline-none focus:ring-1 focus:ring-zinc-600"
+            />
+          </div>
+        )}
 
         {categories.map(cat => (
           <div
