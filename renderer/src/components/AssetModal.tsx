@@ -2,10 +2,61 @@
 import React, { useEffect, useState } from 'react';
 import { useUiStore } from '../store/uiStore';
 import { useAssetStore } from '../store/assetStore';
+import { useCategoryStore } from '../store/categoryStore';
 import StarRating from './StarRating';
 import TagEditor from './TagEditor';
 import MetadataPanel from './MetadataPanel';
 import type { Asset } from '../types';
+
+function CategoryEditor({
+  assetCategories,
+  assetId,
+  onCategoriesChange,
+}: {
+  assetCategories: string[];
+  assetId: number;
+  onCategoriesChange: (cats: string[]) => void;
+}) {
+  const { categories, fetchCategories } = useCategoryStore();
+
+  useEffect(() => { fetchCategories(); }, []);
+
+  async function toggle(cat: { id: number; name: string }) {
+    const isAssigned = assetCategories.includes(cat.name);
+    if (isAssigned) {
+      await window.dam.removeFromCategory(assetId, cat.id);
+      onCategoriesChange(assetCategories.filter(n => n !== cat.name));
+    } else {
+      await window.dam.assignCategory(assetId, cat.id);
+      onCategoriesChange([...assetCategories, cat.name]);
+    }
+  }
+
+  if (categories.length === 0) {
+    return <p className="text-xs text-zinc-600">No categories yet. Create one in the sidebar.</p>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {categories.map(cat => {
+        const active = assetCategories.includes(cat.name);
+        return (
+          <button
+            key={cat.id}
+            onClick={() => toggle(cat)}
+            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+              active
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+            }`}
+          >
+            {cat.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AssetModal() {
   const { selectedAsset, closeModal } = useUiStore();
@@ -101,6 +152,19 @@ export default function AssetModal() {
           <div className="p-4 border-b border-zinc-800">
             <h3 className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Tags</h3>
             <TagEditor tags={asset.tags} assetId={asset.id} onTagsChange={handleTagsChange} />
+          </div>
+
+          {/* Categories */}
+          <div className="p-4 border-b border-zinc-800">
+            <h3 className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Categories</h3>
+            <CategoryEditor
+              assetCategories={asset.categories}
+              assetId={asset.id}
+              onCategoriesChange={(categories) => {
+                setAsset(a => a ? { ...a, categories } : a);
+                updateLocalAsset(asset.id, { categories });
+              }}
+            />
           </div>
 
           <div className="p-4">

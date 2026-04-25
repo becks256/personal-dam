@@ -1,13 +1,17 @@
-// renderer/src/store/assetStore.ts
 import { create } from 'zustand';
-import type { Asset, AssetQuery, AssetUpdate } from '../types';
+import type { Asset, AssetQuery } from '../types';
+
+const PAGE_SIZE = 100;
 
 interface AssetState {
   assets: Asset[];
   total: number;
   query: AssetQuery;
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
   fetchAssets: (q?: Partial<AssetQuery>) => Promise<void>;
+  fetchMore: () => Promise<void>;
   updateLocalAsset: (id: number, update: Partial<Asset>) => void;
   setQuery: (q: Partial<AssetQuery>) => void;
 }
@@ -15,22 +19,51 @@ interface AssetState {
 export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   total: 0,
-  query: { limit: 200, offset: 0, sortBy: 'date_modified', sortDir: 'desc' },
+  query: { limit: PAGE_SIZE, offset: 0, sortBy: 'date_modified', sortDir: 'desc' },
   loading: false,
+  loadingMore: false,
+  hasMore: false,
 
   setQuery: (q) => {
-    set(s => ({ query: { ...s.query, ...q } }));
+    const next = { ...get().query, ...q, offset: 0 };
+    set({ query: next });
     get().fetchAssets();
   },
 
   fetchAssets: async (q) => {
-    const query = q ? { ...get().query, ...q } : get().query;
-    set({ loading: true });
+    const query = q ? { ...get().query, ...q, offset: 0 } : { ...get().query, offset: 0 };
+    set({ loading: true, query: { ...get().query, ...query } });
     try {
       const result = await window.dam.getAssets(query);
-      set({ assets: result.assets, total: result.total, loading: false });
+      set({
+        assets: result.assets,
+        total: result.total,
+        loading: false,
+        hasMore: result.assets.length < result.total,
+      });
     } catch {
       set({ loading: false });
+    }
+  },
+
+  fetchMore: async () => {
+    const { assets, total, query, loading, loadingMore, hasMore } = get();
+    if (loading || loadingMore || !hasMore) return;
+    const nextOffset = assets.length;
+    if (nextOffset >= total) return;
+    set({ loadingMore: true });
+    try {
+      const result = await window.dam.getAssets({ ...query, offset: nextOffset, limit: PAGE_SIZE });
+      const merged = [...assets, ...result.assets];
+      set({
+        assets: merged,
+        total: result.total,
+        loadingMore: false,
+        hasMore: merged.length < result.total,
+        query: { ...query, offset: nextOffset },
+      });
+    } catch {
+      set({ loadingMore: false });
     }
   },
 
