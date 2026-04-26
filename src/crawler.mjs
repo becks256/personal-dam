@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { isMediaFile, getMediaType, extractMetadata } from './metadata.mjs';
 import { generateThumbnail } from './thumbnailer.mjs';
-import { upsertAsset, setThumbnailPath } from './db.mjs';
+import { upsertAsset, setThumbnailPath, getOrCreateCategory, assignCategory } from './db.mjs';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '$RECYCLE.BIN', 'System Volume Information']);
 
@@ -54,6 +54,12 @@ export function startCrawl(rootPaths, thumbDir, onProgress) {
           const filename = path.basename(filePath);
 
           const { id } = upsertAsset({ path: filePath, filename, type, thumbnail_path: null, ...meta });
+
+          const folderName = path.basename(path.dirname(filePath));
+          if (folderName) {
+            const cat = getOrCreateCategory(folderName);
+            if (cat) assignCategory(id, cat.id);
+          }
 
           const thumbPath = await generateThumbnail(filePath, thumbDir);
           if (thumbPath) setThumbnailPath(id, thumbPath);

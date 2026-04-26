@@ -294,6 +294,11 @@ export function renameCategory(id, name) {
   db.prepare(`UPDATE categories SET name = ? WHERE id = ?`).run(name, id);
 }
 
+export function getOrCreateCategory(name) {
+  db.prepare(`INSERT OR IGNORE INTO categories (name) VALUES (?)`).run(name);
+  return db.prepare(`SELECT id FROM categories WHERE name = ? COLLATE NOCASE`).get(name);
+}
+
 export function assignCategory(assetId, categoryId) {
   db.prepare(`INSERT OR IGNORE INTO asset_categories (asset_id, category_id) VALUES (?, ?)`)
     .run(assetId, categoryId);
