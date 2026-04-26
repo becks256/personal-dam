@@ -86,6 +86,8 @@ export interface DamApi {
   assignCategory(assetId: number, categoryId: number): Promise<void>;
   removeFromCategory(assetId: number, categoryId: number): Promise<void>;
   bulkAssignCategory(assetIds: number[], categoryId: number): Promise<void>;
+  deleteAsset(id: number, deleteFile: boolean): Promise<void>;
+  showInFolder(filePath: string): Promise<void>;
 }
 
 declare global {

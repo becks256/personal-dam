@@ -1,8 +1,9 @@
 // dam/src/ipc.mjs
-import { ipcMain, dialog, app } from 'electron';
+import { ipcMain, dialog, app, shell } from 'electron';
 import path from 'node:path';
+import { unlink } from 'node:fs/promises';
 import {
-  getAssets, getAssetById, updateAsset,
+  getAssets, getAssetById, updateAsset, deleteAsset,
   addTag, removeTag, getAllTags,
   getSetting, setSetting,
   getCategories, createCategory, deleteCategory, renameCategory,
@@ -18,6 +19,18 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('assets:get', (_e, query) => getAssets(query));
   ipcMain.handle('assets:getById', (_e, id) => getAssetById(id));
   ipcMain.handle('assets:update', (_e, { id, update }) => { updateAsset(id, update); });
+
+  ipcMain.handle('assets:delete', async (_e, { id, deleteFile }) => {
+    const row = deleteAsset(id);
+    if (deleteFile && row) {
+      await unlink(row.path).catch(() => {});
+      if (row.thumbnail_path) await unlink(row.thumbnail_path).catch(() => {});
+    }
+  });
+
+  ipcMain.handle('assets:showInFolder', (_e, filePath) => {
+    shell.showItemInFolder(filePath);
+  });
 
   ipcMain.handle('tags:add', (_e, { assetId, tag }) => { addTag(assetId, tag); });
   ipcMain.handle('tags:remove', (_e, { assetId, tag }) => { removeTag(assetId, tag); });

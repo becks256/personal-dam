@@ -61,9 +61,11 @@ function CategoryEditor({
 export default function AssetModal() {
   const { selectedAsset, closeModal } = useUiStore();
   const updateLocalAsset = useAssetStore(s => s.updateLocalAsset);
+  const removeAsset = useAssetStore(s => s.removeAsset);
   const [asset, setAsset] = useState<Asset | null>(selectedAsset);
   const [description, setDescription] = useState(selectedAsset?.description ?? '');
   const [showMeta, setShowMeta] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') closeModal(); }
@@ -101,6 +103,16 @@ export default function AssetModal() {
   function handleTagsChange(tags: string[]) {
     setAsset(a => a ? { ...a, tags } : a);
     updateLocalAsset(asset.id, { tags });
+  }
+
+  async function handleDelete(deleteFile: boolean) {
+    await window.dam.deleteAsset(asset.id, deleteFile);
+    removeAsset(asset.id);
+    closeModal();
+  }
+
+  function handleShowInFolder() {
+    window.dam.showInFolder(asset.path);
   }
 
   return (
@@ -167,7 +179,7 @@ export default function AssetModal() {
             />
           </div>
 
-          <div className="p-4">
+          <div className="p-4 border-b border-zinc-800">
             <button
               onClick={() => setShowMeta(v => !v)}
               className="text-xs text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1"
@@ -175,6 +187,48 @@ export default function AssetModal() {
               Metadata {showMeta ? '▲' : '▼'}
             </button>
             {showMeta && <MetadataPanel asset={asset} />}
+          </div>
+
+          <div className="p-4 mt-auto space-y-2">
+            <button
+              onClick={handleShowInFolder}
+              className="w-full px-3 py-1.5 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
+            >
+              Show in Folder
+            </button>
+
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full px-3 py-1.5 text-sm bg-zinc-800 hover:bg-red-900 text-zinc-400 hover:text-red-300 rounded transition-colors"
+              >
+                Delete…
+              </button>
+            ) : (
+              <div className="space-y-1.5">
+                <p className="text-xs text-zinc-400 text-center">Delete from library only, or also from disk?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDelete(false)}
+                    className="flex-1 px-2 py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors"
+                  >
+                    Library only
+                  </button>
+                  <button
+                    onClick={() => handleDelete(true)}
+                    className="flex-1 px-2 py-1.5 text-xs bg-red-800 hover:bg-red-700 text-red-100 rounded transition-colors"
+                  >
+                    + Delete file
+                  </button>
+                </div>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="w-full text-xs text-zinc-600 hover:text-zinc-400 py-0.5"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

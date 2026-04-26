@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('dam', {
   getAssets:   (query)         => ipcRenderer.invoke('assets:get', query),
   getAssetById:(id)            => ipcRenderer.invoke('assets:getById', id),
   updateAsset: (id, update)    => ipcRenderer.invoke('assets:update', { id, update }),
+  deleteAsset: (id, deleteFile) => ipcRenderer.invoke('assets:delete', { id, deleteFile }),
+  showInFolder: (filePath)     => ipcRenderer.invoke('assets:showInFolder', filePath),
   addTag:      (assetId, tag)  => ipcRenderer.invoke('tags:add', { assetId, tag }),
   removeTag:   (assetId, tag)  => ipcRenderer.invoke('tags:remove', { assetId, tag }),
   getAllTags:   ()              => ipcRenderer.invoke('tags:getAll'),

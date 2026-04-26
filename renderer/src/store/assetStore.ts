@@ -13,6 +13,7 @@ interface AssetState {
   fetchAssets: (q?: Partial<AssetQuery>) => Promise<void>;
   fetchMore: () => Promise<void>;
   updateLocalAsset: (id: number, update: Partial<Asset>) => void;
+  removeAsset: (id: number) => void;
   setQuery: (q: Partial<AssetQuery>) => void;
 }
 
@@ -70,6 +71,13 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   updateLocalAsset: (id, update) => {
     set(s => ({
       assets: s.assets.map(a => a.id === id ? { ...a, ...update } : a),
+    }));
+  },
+
+  removeAsset: (id) => {
+    set(s => ({
+      assets: s.assets.filter(a => a.id !== id),
+      total: s.total - 1,
     }));
   },
 }));

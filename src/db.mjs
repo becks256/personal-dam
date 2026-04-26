@@ -223,6 +223,13 @@ export function getAssets(query = {}) {
   return { assets, total };
 }
 
+// ── deleteAsset ──────────────────────────────────────────────────────────────
+export function deleteAsset(id) {
+  const row = db.prepare(`SELECT path, thumbnail_path FROM assets WHERE id = ?`).get(id);
+  db.prepare(`DELETE FROM assets WHERE id = ?`).run(id);
+  return row ?? null; // caller handles file removal
+}
+
 // ── updateAsset ──────────────────────────────────────────────────────────────
 export function updateAsset(id, update) {
   const fields = [];
