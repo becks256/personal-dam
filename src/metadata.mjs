@@ -5,8 +5,10 @@ import sharp from 'sharp';
 import exifr from 'exifr';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath.path);
 
 export const MEDIA_EXTENSIONS = {
   image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.tiff', '.tif', '.bmp'],

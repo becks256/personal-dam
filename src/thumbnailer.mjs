@@ -4,9 +4,11 @@ import path from 'node:path';
 import sharp from 'sharp';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
+import ffprobePath from 'ffprobe-static';
 import { getMediaType } from './metadata.mjs';
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath.path);
 
 const THUMB_SIZE = 320;
 
