@@ -214,7 +214,7 @@ export function getAssets(query = {}) {
     LEFT JOIN tags t ON t.id = atags.tag_id
     ${where}
     GROUP BY a.id
-    ORDER BY a.${col} ${dir}
+    ORDER BY CASE WHEN a.${col} IS NULL THEN 1 ELSE 0 END, a.${col} ${dir}
     LIMIT @limit OFFSET @offset
   `;
 

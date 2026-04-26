@@ -35,11 +35,17 @@ export async function extractImageMetadata(filePath) {
     }).catch(() => null),
   ]);
 
-  const dateTaken = exif?.DateTimeOriginal
-    ? (exif.DateTimeOriginal instanceof Date
-        ? exif.DateTimeOriginal.toISOString()
-        : exif.DateTimeOriginal)
-    : null;
+  let dateTaken = null;
+  if (exif?.DateTimeOriginal) {
+    if (exif.DateTimeOriginal instanceof Date) {
+      dateTaken = exif.DateTimeOriginal.toISOString();
+    } else {
+      // EXIF raw format: "YYYY:MM:DD HH:MM:SS" — normalize to ISO so SQLite text sort works
+      const normalized = String(exif.DateTimeOriginal).replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+      const d = new Date(normalized);
+      dateTaken = isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  }
 
   return {
     size_bytes: fileStats.size,
