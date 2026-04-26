@@ -5,8 +5,7 @@ import { useAssetStore } from '../store/assetStore';
 
 export default function Settings() {
   const [paths, setPaths] = useState<string[]>([]);
-  const [crawling, setCrawling] = useState(false);
-  const crawlerProgress = useUiStore(s => s.crawlerProgress);
+  const { crawlerProgress, crawling, setCrawling } = useUiStore();
   const fetchAssets = useAssetStore(s => s.fetchAssets);
 
   useEffect(() => {
