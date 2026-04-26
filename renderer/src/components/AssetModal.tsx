@@ -78,7 +78,11 @@ export default function AssetModal() {
   const thumbSrc = asset.thumbnail_path
     ? `thumb://${encodeURIComponent(asset.thumbnail_path)}`
     : null;
-  const fullSrc = `thumb://${encodeURIComponent(asset.path)}`;
+  const BROWSER_IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg']);
+  const ext = asset.path.slice(asset.path.lastIndexOf('.')).toLowerCase();
+  const previewSrc = asset.type === 'image' && !BROWSER_IMAGE_EXTS.has(ext)
+    ? (thumbSrc ?? `thumb://${encodeURIComponent(asset.path)}`)
+    : `thumb://${encodeURIComponent(asset.path)}`;
 
   async function handleRatingChange(rating: number) {
     setAsset(a => a ? { ...a, rating } : a);
@@ -126,9 +130,9 @@ export default function AssetModal() {
       >
         <div className="flex-1 bg-zinc-950 flex items-center justify-center overflow-hidden">
           {asset.type === 'video' ? (
-            <video src={fullSrc} controls className="max-w-full max-h-full" />
+            <video src={`thumb://${encodeURIComponent(asset.path)}`} controls className="max-w-full max-h-full" />
           ) : (
-            <img src={fullSrc} alt={asset.filename} className="max-w-full max-h-full object-contain" />
+            <img src={previewSrc} alt={asset.filename} className="max-w-full max-h-full object-contain" />
           )}
         </div>
 
