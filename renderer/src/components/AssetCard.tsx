@@ -9,11 +9,22 @@ interface Props { asset: Asset; }
 export default function AssetCard({ asset }: Props) {
   const openModal = useUiStore(s => s.openModal);
   const toggleSelect = useUiStore(s => s.toggleSelect);
+  const selectRange = useUiStore(s => s.selectRange);
   const selectedIds = useUiStore(s => s.selectedIds);
+  const lastSelectedId = useUiStore(s => s.lastSelectedId);
+  const assets = useAssetStore(s => s.assets);
   const updateLocalAsset = useAssetStore(s => s.updateLocalAsset);
 
   const isSelected = selectedIds.has(asset.id);
   const anySelected = selectedIds.size > 0;
+
+  function handleSelect(e: React.MouseEvent) {
+    if (e.shiftKey && lastSelectedId != null) {
+      selectRange(lastSelectedId, asset.id, assets);
+    } else {
+      toggleSelect(asset.id);
+    }
+  }
 
   const thumbSrc = asset.thumbnail_path
     ? `thumb://${encodeURIComponent(asset.thumbnail_path)}`
@@ -28,12 +39,12 @@ export default function AssetCard({ asset }: Props) {
 
   function handleCheckbox(e: React.MouseEvent) {
     e.stopPropagation();
-    toggleSelect(asset.id);
+    handleSelect(e);
   }
 
   return (
     <div
-      onClick={() => anySelected ? toggleSelect(asset.id) : openModal(asset)}
+      onClick={(e) => anySelected ? handleSelect(e) : openModal(asset)}
       className={`group relative bg-zinc-900 rounded-lg overflow-hidden cursor-pointer border transition-colors ${
         isSelected ? 'border-blue-500 ring-1 ring-blue-500' : 'border-zinc-800 hover:border-zinc-600'
       }`}
