@@ -7,7 +7,7 @@ import {
   addTag, removeTag, getAllTags,
   getSetting, setSetting,
   getCategories, createCategory, deleteCategory, renameCategory,
-  assignCategory, removeFromCategory, bulkAssignCategory,
+  assignCategory, removeFromCategory, bulkAssignCategory, mergeCategories,
 } from './db.mjs';
 import { startCrawl } from './crawler.mjs';
 import { startWatcher, stopWatcher } from './watcher.mjs';
@@ -44,6 +44,7 @@ export function registerIpcHandlers(mainWindow) {
   ipcMain.handle('categories:assign', (_e, { assetId, categoryId }) => { assignCategory(assetId, categoryId); });
   ipcMain.handle('categories:remove', (_e, { assetId, categoryId }) => { removeFromCategory(assetId, categoryId); });
   ipcMain.handle('categories:bulkAssign', (_e, { assetIds, categoryId }) => { bulkAssignCategory(assetIds, categoryId); });
+  ipcMain.handle('categories:merge', (_e, { sourceIds, targetId }) => { mergeCategories(sourceIds, targetId); });
 
   ipcMain.handle('crawler:start', (_e, paths) => {
     if (activeCrawl) activeCrawl.stop();

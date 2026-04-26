@@ -8,6 +8,7 @@ interface CategoryState {
   createCategory: (name: string, description?: string) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
   renameCategory: (id: number, name: string) => Promise<void>;
+  mergeInto: (sourceIds: number[], targetId: number) => Promise<void>;
   setActiveCategory: (id: number | null) => void;
 }
 
@@ -33,6 +34,13 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
 
   renameCategory: async (id, name) => {
     await window.dam.renameCategory(id, name);
+    await get().fetchCategories();
+  },
+
+  mergeInto: async (sourceIds, targetId) => {
+    await window.dam.mergeCategories(sourceIds, targetId);
+    // If active category was one of the sources, redirect to target
+    if (sourceIds.includes(get().activeCategory!)) set({ activeCategory: targetId });
     await get().fetchCategories();
   },
 

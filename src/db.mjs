@@ -316,6 +316,19 @@ export function removeFromCategory(assetId, categoryId) {
     .run(assetId, categoryId);
 }
 
+export function mergeCategories(sourceIds, targetId) {
+  db.transaction(() => {
+    for (const srcId of sourceIds) {
+      // Move all asset assignments from source to target (ignore if already assigned)
+      db.prepare(`
+        INSERT OR IGNORE INTO asset_categories (asset_id, category_id)
+        SELECT asset_id, ? FROM asset_categories WHERE category_id = ?
+      `).run(targetId, srcId);
+      db.prepare(`DELETE FROM categories WHERE id = ?`).run(srcId);
+    }
+  })();
+}
+
 export function bulkAssignCategory(assetIds, categoryId) {
   const stmt = db.prepare(`INSERT OR IGNORE INTO asset_categories (asset_id, category_id) VALUES (?, ?)`);
   db.transaction(() => { for (const id of assetIds) stmt.run(id, categoryId); })();

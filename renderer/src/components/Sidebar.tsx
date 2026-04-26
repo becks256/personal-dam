@@ -6,11 +6,12 @@ import { useCategoryStore } from '../store/categoryStore';
 export default function Sidebar() {
   const { activePage, setPage, crawlerProgress } = useUiStore();
   const { setQuery } = useAssetStore();
-  const { categories, activeCategory, fetchCategories, createCategory, deleteCategory, renameCategory, setActiveCategory } = useCategoryStore();
+  const { categories, activeCategory, fetchCategories, createCategory, deleteCategory, renameCategory, mergeInto, setActiveCategory } = useCategoryStore();
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [mergingId, setMergingId] = useState<number | null>(null);
 
   useEffect(() => { fetchCategories(); }, []);
 
@@ -24,6 +25,12 @@ export default function Sidebar() {
     setCreating(false);
     setNewName('');
     if (name) await createCategory(name);
+  }
+
+  async function handleMerge(sourceId: number, targetId: number) {
+    setMergingId(null);
+    await mergeInto([sourceId], targetId);
+    if (activeCategory === sourceId) selectCategory(targetId);
   }
 
   async function handleDelete(e: React.MouseEvent, id: number) {
@@ -106,8 +113,8 @@ export default function Sidebar() {
         )}
 
         {categories.map(cat => (
+          <React.Fragment key={cat.id}>
           <div
-            key={cat.id}
             onClick={() => selectCategory(cat.id)}
             className={`group flex items-center gap-1 px-3 py-1.5 cursor-pointer transition-colors ${
               activeCategory === cat.id
@@ -139,12 +146,35 @@ export default function Sidebar() {
                 title="Rename"
               >✎</button>
               <button
+                onClick={e => { e.stopPropagation(); setMergingId(mergingId === cat.id ? null : cat.id); }}
+                className="text-zinc-500 hover:text-blue-400 text-xs px-0.5"
+                title="Merge into…"
+              >⇒</button>
+              <button
                 onClick={e => handleDelete(e, cat.id)}
                 className="text-zinc-500 hover:text-red-400 text-xs px-0.5"
                 title="Delete"
               >×</button>
             </div>
           </div>
+
+          {mergingId === cat.id && (
+            <div className="px-3 pb-2" onClick={e => e.stopPropagation()}>
+              <select
+                autoFocus
+                defaultValue=""
+                onChange={e => { if (e.target.value) handleMerge(cat.id, Number(e.target.value)); }}
+                onBlur={() => setMergingId(null)}
+                className="w-full bg-zinc-700 text-xs text-zinc-200 px-2 py-1 rounded focus:outline-none cursor-pointer"
+              >
+                <option value="" disabled>Merge into…</option>
+                {categories.filter(c => c.id !== cat.id).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          </React.Fragment>
         ))}
       </div>
 

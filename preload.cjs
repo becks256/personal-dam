@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('dam', {
   assignCategory:     (assetId, categoryId) => ipcRenderer.invoke('categories:assign', { assetId, categoryId }),
   removeFromCategory: (assetId, categoryId) => ipcRenderer.invoke('categories:remove', { assetId, categoryId }),
   bulkAssignCategory: (assetIds, categoryId) => ipcRenderer.invoke('categories:bulkAssign', { assetIds, categoryId }),
+  mergeCategories:    (sourceIds, targetId)  => ipcRenderer.invoke('categories:merge', { sourceIds, targetId }),
   onCrawlerProgress: (cb) => {
     const handler = (_event, progress) => cb(progress);
     ipcRenderer.on('crawler:progress', handler);
